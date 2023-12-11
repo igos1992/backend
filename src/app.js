@@ -1,6 +1,5 @@
 const http = require("http");
 const getUsers = require("./modules/users");
-
 const hostname = "127.0.0.1";
 const port = 3003;
 
