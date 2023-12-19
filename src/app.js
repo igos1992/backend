@@ -1,63 +1,61 @@
-const http = require("http");
-const getUsers = require("./modules/users");
-const hostname = "127.0.0.1";
-const port = 3003;
+const express = require("express");
+const dotenv = require("dotenv");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const userRouter = require("./routers/users");
+const loggerOne = require("./middlewares/loggerOne");
 
-const server = http.createServer((request, response) => {
-  const url = new URL(request.url, `http://${request.headers.host}`);
-  const params = url.searchParams;
-  const name = params.get("hello");
+dotenv.config();
 
-  if (params.has("hello")) {
-    if (name === "") {
-      response.statusCode = 400;
-      response.statusMessage = "Error";
-      response.setHeader = "Content-Type: text/plain";
-      response.write("Enter a name");
-      response.end();
+const app = express();
 
-      return;
-    }
-    response.statusCode = 200;
-    response.statusMessage = "OK";
-    response.setHeader = "Content-Type: text/plain";
-    response.write(`Hello, ${name}`);
-    response.end();
+const {
+  PORT = 3000,
+  API_URL = "http://127.0.0.1",
+  MONGO_URL = "mongodb://localhost:27017/backend",
+} = process.env;
 
-    return;
-  } else if (request.url === "/?users") {
-    response.statusCode = 200;
-    response.statusMessage = "OK";
-    response.setHeader = "Content-Type: application/json";
-    response.write(getUsers());
-    response.end();
+const helloWorld = (request, response) => {
+  response.status(200);
+  response.send("Hello");
+};
 
-    return;
-  } else if (request.url === "/") {
-    response.statusCode = 200;
-    response.statusMessage = "OK";
-    response.setHeader = "Content-Type: text/plain";
-    response.write("Hello, world!");
-    response.end();
+const HelloFromPOST = (request, response) => {
+  response.status(200);
+  response.send("Hello from POST");
+};
 
-    return;
-  } else if (request.url === "/favicon.ico") {
-    response.statusCode = 200;
-    response.setHeader = "Content-Type: text/plain";
-    response.write("request for favicon");
-    response.end();
+mongoose
+  .connect(MONGO_URL)
+  .then(() => console.log("Connected to Mongo!"))
+  .catch((error) => console.log("[MONGO_CONNECTION]", error));
 
-    return;
-  } else {
-    response.statusCode = 500;
-    response.setHeader = "Content-Type: text/plain";
-    response.write(" ");
-    response.end();
+// mongoose.connect('mongodb://127.0.0.1:27017/mydb', err => {
+//     if(err) throw err;
+//     console.log('Connected to MongoDB');
+// });
 
-    return;
-  }
-});
+app.use(cors());
+app.use(loggerOne);
+app.use(bodyParser.json());
 
-server.listen(3003, () => {
-  console.log(`Адрес сервера http://${hostname}:${port}`);
+app.get("/", helloWorld);
+
+app.post("/", HelloFromPOST);
+
+// app.get("/users/34", (request, response) => {
+//   response.status(200);
+//   response.send("User with id: 34");
+// });
+
+app.use(userRouter);
+
+// app.post("/", (request, response) => {
+//   response.status(200);
+//   response.send("Hello from POST");
+// });
+
+app.listen(PORT, () => {
+  console.log(`Сервер запущен по адресу ${API_URL}:${PORT}`);
 });
